@@ -2,15 +2,15 @@ module("luci.controller.filebrowser", package.seeall)
 
 function index()
 
-	page = entry({"admin", "system", "filebrowser"}, template("filebrowser"), _("File Browser"), 60)
-	page.i18n = "base"
-	page.dependent = true
+    page = entry({"admin", "system", "filebrowser"}, template("filebrowser"), _("文件管理"), 60)
+    page.i18n = "base"
+    page.dependent = true
 
-	page = entry({"admin", "system", "filebrowser_list"}, call("filebrowser_list"), nil)
-	page.leaf = true
+    page = entry({"admin", "system", "filebrowser_list"}, call("filebrowser_list"), nil)
+    page.leaf = true
 
-	page = entry({"admin", "system", "filebrowser_open"}, call("filebrowser_open"), nil)
-	page.leaf = true
+    page = entry({"admin", "system", "filebrowser_open"}, call("filebrowser_open"), nil)
+    page.leaf = true
 
     page = entry({"admin", "system", "filebrowser_delete"}, call("filebrowser_delete"), nil)
     page.leaf = true
@@ -24,29 +24,29 @@ function index()
 end
 
 function filebrowser_list()
-	local rv = { }
-	local path = luci.http.formvalue("path")
+    local rv = { }
+    local path = luci.http.formvalue("path")
 
-    rv = scandir(path)	
+    rv = scandir(path)
 
-	if #rv > 0 then
-		luci.http.prepare_content("application/json")
-		luci.http.write_json(rv)
-		return
-	end
+    if #rv > 0 then
+        luci.http.prepare_content("application/json")
+        luci.http.write_json(rv)
+        return
+    end
 
 end
 
 function filebrowser_open(file, filename)
-	file = file:gsub("<>", "/")
+    file = file:gsub("<>", "/")
 
-	local io = require "io"
-	local mime = to_mime(filename)
+    local io = require "io"
+    local mime = to_mime(filename)
 
-	local download_fpi = io.open(file, "r")
-	luci.http.header('Content-Disposition', 'inline; filename="'..filename..'"' )
-	luci.http.prepare_content(mime or "application/octet-stream")
-	luci.ltn12.pump.all(luci.ltn12.source.file(download_fpi), luci.http.write)
+    local download_fpi = io.open(file, "r")
+    luci.http.header('Content-Disposition', 'inline; filename="'..filename..'"' )
+    luci.http.prepare_content(mime or "application/octet-stream")
+    luci.ltn12.pump.all(luci.ltn12.source.file(download_fpi), luci.http.write)
 end
 
 function filebrowser_delete()
@@ -74,40 +74,33 @@ function filebrowser_upload()
     local filename = luci.http.formvalue("upload-filename")
     local uploaddir = luci.http.formvalue("upload-dir")
     local filepath = uploaddir..filename
-    local url = luci.dispatcher.build_url('admin', 'system', 'filebrowser')
 
     local fp
-    fp = io.open(filepath, "w")
-    fp:write(filecontent)
-    fp:close()
-    luci.http.redirect(url..'?path='..uploaddir)
-
-    --[[luci.http.setfilehandler(
+    luci.http.setfilehandler(
         function(meta, chunk, eof)
-            uci.http.write('open '..filepath)
-            if not fp then
-                if meta and meta.name == 'upload-file' then
-                    --luci.http.write('open file '..filepath)
-                    fp = io.open(filepath, "w")
-                end
+            if not fp and meta and meta.name == "upload-file" then
+                fp = io.open(filepath, "w")
             end
             if fp and chunk then
-                --luci.http.write(chunk)
                 fp:write(chunk)
             end
             if fp and eof then
-                --luci.http.write('close')
                 fp:close()
-                luci.http.redirect(url..'?path='..uploaddir)
             end
-        end
-    )]]--
+      end
+    )
+
+    local url = luci.dispatcher.build_url('admin', 'system', 'filebrowser')
+    if filecontent and #filecontent > 0 then
+        luci.http.redirect(url..'?path='..uploaddir)
+        return
+    end
 end
 
 function scandir(directory)
     local i, t, popen = 0, {}, io.popen
-    
-    local pfile = popen("ls -l \""..directory.."\" | egrep '^d' ; ls -lh \""..directory.."\" | egrep -v '^d'")
+
+    local pfile = popen("ls -lh \""..directory.."\" | egrep '^d' ; ls -lh \""..directory.."\" | egrep -v '^d'")
     for filename in pfile:lines() do
         i = i + 1
         t[i] = filename
@@ -118,7 +111,9 @@ end
 
 MIME_TYPES = {
     ["txt"]   = "text/plain";
+    ["conf"]   = "text/plain";
     ["js"]    = "text/javascript";
+    ["json"]    = "application/json";
     ["css"]   = "text/css";
     ["htm"]   = "text/html";
     ["html"]  = "text/html";
@@ -161,13 +156,13 @@ MIME_TYPES = {
 }
 
 function to_mime(filename)
-	if type(filename) == "string" then
-		local ext = filename:match("[^%.]+$")
+    if type(filename) == "string" then
+        local ext = filename:match("[^%.]+$")
 
-		if ext and MIME_TYPES[ext:lower()] then
-			return MIME_TYPES[ext:lower()]
-		end
-	end
+        if ext and MIME_TYPES[ext:lower()] then
+            return MIME_TYPES[ext:lower()]
+        end
+    end
 
-	return "application/octet-stream"
+    return "application/octet-stream"
 end

@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cp resources/* /www/luci-static/resources/
+cp -R luasrc/* /usr/lib/lua/luci/
+rm -rf /tmp/luci*
