@@ -1,21 +1,19 @@
 .fb-container {
     margin-top: 1rem;
 }
-.fb-container .cbi-button {
-    height: 1.6rem;
-}
 .fb-container .cbi-input-text {
     margin-bottom: 1rem;
     width: 100%;
 }
 .fb-container .panel-title {
     padding-bottom: 0;
+    width: 50%;
     border-bottom: none;
 }
-
 .fb-container .panel-container {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     padding-bottom: 1rem;
     border-bottom: 1px solid #eee;
 }
@@ -29,15 +27,12 @@
 .fb-container .cbi-value-field {
     text-align: left;
 }
-
 .fb-container .parent-icon strong {
     margin-left: 1rem;
 }
-
 .fb-container td[class$="-icon"] {
     cursor: pointer;
 }
-
 .fb-container .file-icon, .fb-container .folder-icon, .fb-container .link-icon {
     position: relative;
 }
@@ -59,8 +54,12 @@
 .fb-container .link-icon:before {
     background-image: url(link-icon.png);
 }
-@media (max-width: 767px) {
-    .perms-cell, .owner-cell, .size-cell, .date-cell {
+@media screen and (max-width: 480px) {
+    .fb-container .cbi-button {
+        font-size: 1rem;
+    }
+    .fb-container .cbi-value-owner,
+    .fb-container .cbi-value-perm {
         display: none;
     }
 }

@@ -44,8 +44,9 @@ String.prototype.replaceAll = function(search, replacement) {
       }
   }
 
-  function openpath(filename) {
-    var encodePath = encodeURIComponent(concatPath(currentPath, filename).replace(/\//g, '<>'));
+  function openpath(filename, dirname) {
+    dirname = dirname || currentPath;
+    var encodePath = encodeURIComponent(concatPath(dirname, filename).replace(/\//g, '<>'));
     window.open('/cgi-bin/luci/admin/system/filebrowser_open/' + encodePath + '/' + filename);
   }
 
@@ -85,7 +86,17 @@ String.prototype.replaceAll = function(search, replacement) {
         openpath(targetElem.parentNode.dataset['filename']);
       }
       else if (targetElem.className.indexOf('link-icon') > -1) {
-        // update_list(targetElem.dataset['desdir'])
+        infoElem = targetElem.parentNode;
+        var filepath = infoElem.dataset['linktarget'];
+        if (filepath) {
+          if (infoElem.dataset['isdir'] === "1") {
+            update_list(filepath);
+          }
+          else {
+            var lastSlash = filepath.lastIndexOf('/');
+            openpath(filepath.substring(lastSlash + 1), filepath.substring(0, lastSlash));
+          }
+        }
       }
       else if (targetElem.className.indexOf('folder-icon') > -1) {
         update_list(concatPath(currentPath, targetElem.parentNode.dataset['filename']))
@@ -93,7 +104,7 @@ String.prototype.replaceAll = function(search, replacement) {
     }
   }
   function update_list(path) {
-    path = path || "/";
+    path = concatPath(path, '');
     iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_list',
       {path: path},
       function (x, ifc) {
@@ -107,26 +118,27 @@ String.prototype.replaceAll = function(search, replacement) {
             var line = filenames[i];
             if (line) {
               var f = line.match(/(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\S\s]+)/);
+              var isLink = f[1][0] === 'z' || f[1][0] === 'l' || f[1][0] === 'x';
               var o = {
                 displayname: f[9],
-                filename: (f[1][0] === 'l') ? f[9].split(' -> ')[0] : f[9],
+                filename: isLink ? f[9].split(' -> ')[0] : f[9],
                 perms: f[1],
                 date: f[7] + ' ' + f[6] + ' ' + f[8],
                 size: f[5],
                 owner: f[3],
-                icon: (f[1][0] === 'd') ? "folder-icon" : (f[1][0] === 'l' ? "link-icon" : "file-icon")
+                icon: (f[1][0] === 'd') ? "folder-icon" : (isLink ? "link-icon" : "file-icon")
               };
               listHtml += '<tr class="cbi-section-table-row cbi-rowstyle-' + (1 + i%2)
-                + '" data-filename="' + o.filename + '" data-isdir="' + Number(f[1][0] === 'd') + '"'
-                + (f[1][0] === 'l' ? ('" data-desdir="' + f[9].split(' -> ')[1]) : '')
+                + '" data-filename="' + o.filename + '" data-isdir="' + Number(f[1][0] === 'd' || f[1][0] === 'z') + '"'
+                + ((f[1][0] === 'z' || f[1][0] === 'l') ? (' data-linktarget="' + f[9].split(' -> ')[1]) : '')
                 + '">'
                 + '<td class="cbi-value-field ' + o.icon + '">'
                 +   '<strong>' + o.displayname + '</strong>'
                 + '</td>'
-                + '<td class="cbi-value-field">'+o.owner+'</td>'
-                + '<td class="cbi-value-field">'+o.date+'</td>'
-                + '<td class="cbi-value-field">'+o.size+'</td>'
-                + '<td class="cbi-value-field">'+o.perms+'</td>'
+                + '<td class="cbi-value-field cbi-value-owner">'+o.owner+'</td>'
+                + '<td class="cbi-value-field cbi-value-date">'+o.date+'</td>'
+                + '<td class="cbi-value-field cbi-value-size">'+o.size+'</td>'
+                + '<td class="cbi-value-field cbi-value-perm">'+o.perms+'</td>'
                 + '<td class="cbi-section-table-cell"><button class="cbi-button cbi-button-edit">重命名</button>\
                     <button class="cbi-button cbi-button-remove">删除</button></td>'
                 + '</tr>';

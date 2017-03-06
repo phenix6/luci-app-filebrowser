@@ -100,10 +100,34 @@ end
 function scandir(directory)
     local i, t, popen = 0, {}, io.popen
 
-    local pfile = popen("ls -lh \""..directory.."\" | egrep '^d' ; ls -lh \""..directory.."\" | egrep -v '^d'")
-    for filename in pfile:lines() do
+    local pfile = popen("ls -lh \""..directory.."\" | egrep '^d' ; ls -lh \""..directory.."\" | egrep -v '^d|^l'")
+    for fileinfo in pfile:lines() do
         i = i + 1
-        t[i] = filename
+        t[i] = fileinfo
+    end
+    pfile:close()
+    pfile = popen("ls -lh \""..directory.."\" | egrep '^l' ;")
+    for fileinfo in pfile:lines() do
+        i = i + 1
+        linkindex, _, linkpath = string.find(fileinfo, "->%s+(.+)$")
+        local finalpath;
+        if string.sub(linkpath, 1, 1) == "/" then
+            finalpath = linkpath
+        else
+            finalpath = nixio.fs.realpath(directory..linkpath)
+        end
+        local linktype;
+        if not finalpath then
+            finalpath = linkpath;
+            linktype = 'x'
+        elseif nixio.fs.stat(finalpath, "type") == "dir" then
+            linktype = 'z'
+        else
+            linktype = 'l'
+        end
+        fileinfo = string.sub(fileinfo, 2, linkindex - 1)
+        fileinfo = linktype..fileinfo.."-> "..finalpath
+        t[i] = fileinfo
     end
     pfile:close()
     return t
