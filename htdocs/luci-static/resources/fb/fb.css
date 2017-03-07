@@ -1,6 +1,9 @@
 .fb-container {
     margin-top: 1rem;
 }
+.fb-container .cbi-button {
+    height: 1.8rem;
+}
 .fb-container .cbi-input-text {
     margin-bottom: 1rem;
     width: 100%;
@@ -55,8 +58,8 @@
     background-image: url(link-icon.png);
 }
 @media screen and (max-width: 480px) {
-    .fb-container .cbi-button {
-        font-size: 1rem;
+    .fb-container .upload-file {
+        width: 14.6rem;
     }
     .fb-container .cbi-value-owner,
     .fb-container .cbi-value-perm {
