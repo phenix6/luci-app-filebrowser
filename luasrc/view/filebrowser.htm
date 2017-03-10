@@ -3,18 +3,16 @@
 <link rel="stylesheet" href="/luci-static/resources/fb/fb.css?v=@ver">
 <h2 name="content">文件管理</h2>
 <fieldset class="cbi-section fb-container">
-<input id="current-path" type="text" class="current-path cbi-input-text" value="/"/>
-<div class="panel-container">
+  <input id="current-path" type="text" class="current-path cbi-input-text" value="/"/>
+  <div class="panel-container">
     <div class="panel-title">文件列表:</div>
     <button id="upload-toggle" class="upload-toggle cbi-button cbi-button-edit">上传</button>
-</div>
-    <form class="upload-container" id="upload-container" method="post" action="<%=luci.dispatcher.build_url('admin', 'system', 'filebrowser_upload')%>" enctype="multipart/form-data">
-        <input id="upload-dir" type="hidden" name="upload-dir">
-        <input id="upload-filename" type="hidden" name="upload-filename">
-        <input id="upload-file" name="upload-file" class="upload-file" type="file">
-        <button type="submit" class="cbi-button cbi-input-apply">开始</button>
-    </form>
-<div id="list-content"></div>
+  </div>
+  <div class="upload-container" id="upload-container">
+    <input id="upload-file" name="upload-file" class="upload-file" type="file">
+    <button type="button" class="cbi-button cbi-input-apply">开始</button>
+  </div>
+  <div id="list-content"></div>
 </fieldset>
 
 <script src="/luci-static/resources/fb/fb.js?v=@ver"></script>

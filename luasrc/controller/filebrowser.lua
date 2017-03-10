@@ -23,18 +23,26 @@ function index()
 
 end
 
-function filebrowser_list()
-    local rv = { }
-    local path = luci.http.formvalue("path")
-
-    rv = scandir(path)
-
-    if #rv > 0 then
-        luci.http.prepare_content("application/json")
-        luci.http.write_json(rv)
-        return
+function list_response(path, success)
+    luci.http.prepare_content("application/json")
+    local result
+    if success then
+        local rv = scandir(path)
+        result = {
+            ec = 0,
+            data = rv
+        }
+    else
+        result = {
+            ec = 1
+        }
     end
+    luci.http.write_json(result)
+end
 
+function filebrowser_list()
+    local path = luci.http.formvalue("path")
+    list_response(path, true)
 end
 
 function filebrowser_open(file, filename)
@@ -54,19 +62,20 @@ function filebrowser_delete()
     local isdir = luci.http.formvalue("isdir")
     path = path:gsub("<>", "/")
     path = path:gsub(" ", "\ ")
+    local success
     if isdir then
-        local success = os.execute('rm -r "'..path..'"')
+        success = os.execute('rm -r "'..path..'"')
     else
-        local success = os.remove(path)
+        success = os.remove(path)
     end
-    return success
+    list_response(nixio.fs.dirname(path), success)
 end
 
 function filebrowser_rename()
     local filepath = luci.http.formvalue("filepath")
     local newpath = luci.http.formvalue("newpath")
     local success = os.execute('mv "'..filepath..'" "'..newpath..'"')
-    return success
+    list_response(nixio.fs.dirname(filepath), success)
 end
 
 function filebrowser_upload()
@@ -90,11 +99,7 @@ function filebrowser_upload()
       end
     )
 
-    local url = luci.dispatcher.build_url('admin', 'system', 'filebrowser')
-    if filecontent and #filecontent > 0 then
-        luci.http.redirect(url..'?path='..uploaddir)
-        return
-    end
+    list_response(uploaddir, true)
 end
 
 function scandir(directory)
@@ -136,6 +141,7 @@ end
 MIME_TYPES = {
     ["txt"]   = "text/plain";
     ["conf"]   = "text/plain";
+    ["ovpn"]   = "text/plain";
     ["js"]    = "text/javascript";
     ["json"]    = "application/json";
     ["css"]   = "text/css";

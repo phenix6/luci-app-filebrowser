@@ -5,9 +5,9 @@ String.prototype.replaceAll = function(search, replacement) {
 (function () {
   var iwxhr = new XHR();
   var listElem = document.getElementById("list-content");
-  var pathElem = document.getElementById("current-path");
   listElem.onclick = handleClick;
   var currentPath;
+  var pathElem = document.getElementById("current-path");
   pathElem.onblur = function () {
     var path = this.value.trim();
     if (currentPath !== path)
@@ -26,8 +26,10 @@ String.prototype.replaceAll = function(search, replacement) {
                 path: concatPath(currentPath, filename),
                 isdir: isdir
             },
-            function (x) {
-              update_list(currentPath);
+            function (x, res) {
+              if (res.ec === 0) {
+                refresh_list(res.data, currentPath);
+              }
           });
       }
   }
@@ -35,12 +37,17 @@ String.prototype.replaceAll = function(search, replacement) {
       var newname = prompt('输入新名字:', filename).trim();
       if (newname && newname != filename) {
           var newpath = concatPath(currentPath, newname);
-          iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_rename', {
-              filepath: concatPath(currentPath, filename),
-              newpath: newpath
-          },function(x, ifc){
-              update_list(currentPath);
-          });
+          iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_rename',
+            {
+                filepath: concatPath(currentPath, filename),
+                newpath: newpath
+            },
+            function (x, res) {
+              if (res.ec === 0) {
+                refresh_list(res.data, currentPath);
+              }
+            }
+          );
       }
   }
 
@@ -103,56 +110,62 @@ String.prototype.replaceAll = function(search, replacement) {
       }
     }
   }
+  function refresh_list(filenames, path) {
+    var listHtml = '<table class="cbi-section-table"><tbody>';
+    if (path !== '/') {
+      listHtml += '<tr><td class="parent-icon" colspan="6"><strong>..</strong></td></tr>';
+    }
+    if (filenames) {
+      for (var i = 0; i < filenames.length; i++) {
+        var line = filenames[i];
+        if (line) {
+          var f = line.match(/(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\S\s]+)/);
+          var isLink = f[1][0] === 'z' || f[1][0] === 'l' || f[1][0] === 'x';
+          var o = {
+            displayname: f[9],
+            filename: isLink ? f[9].split(' -> ')[0] : f[9],
+            perms: f[1],
+            date: f[7] + ' ' + f[6] + ' ' + f[8],
+            size: f[5],
+            owner: f[3],
+            icon: (f[1][0] === 'd') ? "folder-icon" : (isLink ? "link-icon" : "file-icon")
+          };
+          listHtml += '<tr class="cbi-section-table-row cbi-rowstyle-' + (1 + i%2)
+            + '" data-filename="' + o.filename + '" data-isdir="' + Number(f[1][0] === 'd' || f[1][0] === 'z') + '"'
+            + ((f[1][0] === 'z' || f[1][0] === 'l') ? (' data-linktarget="' + f[9].split(' -> ')[1]) : '')
+            + '">'
+            + '<td class="cbi-value-field ' + o.icon + '">'
+            +   '<strong>' + o.displayname + '</strong>'
+            + '</td>'
+            + '<td class="cbi-value-field cbi-value-owner">'+o.owner+'</td>'
+            + '<td class="cbi-value-field cbi-value-date">'+o.date+'</td>'
+            + '<td class="cbi-value-field cbi-value-size">'+o.size+'</td>'
+            + '<td class="cbi-value-field cbi-value-perm">'+o.perms+'</td>'
+            + '<td class="cbi-section-table-cell"><button class="cbi-button cbi-button-edit">重命名</button>\
+                <button class="cbi-button cbi-button-remove">删除</button></td>'
+            + '</tr>';
+        }
+      }
+    }
+    listHtml += "</table>";
+    listElem.innerHTML = listHtml;
+  }
   function update_list(path) {
     path = concatPath(path, '');
     iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_list',
       {path: path},
-      function (x, ifc) {
-        var filenames = ifc;
-        var listHtml = '<table id="fb-table" class="cbi-section-table"><tbody>';
-        if (path !== '/') {
-          listHtml += '<tr><td class="parent-icon" colspan="6"><strong>..</strong></td></tr>';
+      function (x, res) {
+        if (res.ec === 0) {
+          refresh_list(res.data, path);
         }
-        if (filenames) {
-          for (var i = 0; i < filenames.length; i++) {
-            var line = filenames[i];
-            if (line) {
-              var f = line.match(/(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+([\S\s]+)/);
-              var isLink = f[1][0] === 'z' || f[1][0] === 'l' || f[1][0] === 'x';
-              var o = {
-                displayname: f[9],
-                filename: isLink ? f[9].split(' -> ')[0] : f[9],
-                perms: f[1],
-                date: f[7] + ' ' + f[6] + ' ' + f[8],
-                size: f[5],
-                owner: f[3],
-                icon: (f[1][0] === 'd') ? "folder-icon" : (isLink ? "link-icon" : "file-icon")
-              };
-              listHtml += '<tr class="cbi-section-table-row cbi-rowstyle-' + (1 + i%2)
-                + '" data-filename="' + o.filename + '" data-isdir="' + Number(f[1][0] === 'd' || f[1][0] === 'z') + '"'
-                + ((f[1][0] === 'z' || f[1][0] === 'l') ? (' data-linktarget="' + f[9].split(' -> ')[1]) : '')
-                + '">'
-                + '<td class="cbi-value-field ' + o.icon + '">'
-                +   '<strong>' + o.displayname + '</strong>'
-                + '</td>'
-                + '<td class="cbi-value-field cbi-value-owner">'+o.owner+'</td>'
-                + '<td class="cbi-value-field cbi-value-date">'+o.date+'</td>'
-                + '<td class="cbi-value-field cbi-value-size">'+o.size+'</td>'
-                + '<td class="cbi-value-field cbi-value-perm">'+o.perms+'</td>'
-                + '<td class="cbi-section-table-cell"><button class="cbi-button cbi-button-edit">重命名</button>\
-                    <button class="cbi-button cbi-button-remove">删除</button></td>'
-                + '</tr>';
-            }
-          }
+        else {
+          refresh_list([], path);
         }
-        listHtml += "</table>";
-        listElem.innerHTML = listHtml;
         currentPath = path;
       }
     );
     history.pushState(null, null, '?path=' + path);
     pathElem.value = path;
-    document.getElementById("upload-dir").value = concatPath(path, '');
   };
 
   var uploadToggle = document.getElementById('upload-toggle');
@@ -167,24 +180,36 @@ String.prototype.replaceAll = function(search, replacement) {
       }
       isUploadHide = !isUploadHide;
   };
-  uploadContainer.onsubmit = function (evt) {
-    if (uploadinput.value === '') {
+  var uploadBtn = uploadContainer.getElementsByClassName('cbi-input-apply')[0];
+  uploadBtn.onclick = function (evt) {
+    var uploadinput = document.getElementById('upload-file');
+    var fullPath = uploadinput.value;
+    if (!fullPath) {
       evt.preventDefault();
+    }
+    else {
+      var formData = new FormData();
+      var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
+      formData.append('upload-filename', fullPath.substring(startIndex + 1));
+      formData.append('upload-dir', concatPath(currentPath, ''));
+      formData.append('upload-file', uploadinput.files[0]);
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", "/cgi-bin/luci/admin/system/filebrowser_upload", true);
+      xhr.onload = function() {
+        if (xhr.status == 200) {
+          var res = JSON.parse(xhr.responseText);
+          refresh_list(res.data, currentPath);
+          uploadinput.value = '';
+        }
+        else {
+          alert('上传失败');
+        }
+      };
+      xhr.send(formData);
     }
   };
 
-  var uploadinput = document.getElementById('upload-file');
-  uploadinput.addEventListener('change', function () {
-    var fullPath = uploadinput.value;
-    if (fullPath) {
-        var startIndex = (fullPath.indexOf('\\') >= 0 ? fullPath.lastIndexOf('\\') : fullPath.lastIndexOf('/'));
-        var filename = fullPath.substring(startIndex + 1);
-        var uploadFilename = document.getElementById('upload-filename');
-        uploadFilename.value = filename;
-    }
-  });
-
-  document.addEventListener("DOMContentLoaded", function(evt) {
+  document.addEventListener('DOMContentLoaded', function(evt) {
     var initPath = '/';
       if (/path=([/\w]+)/.test(location.search)) {
         initPath = RegExp.$1;
