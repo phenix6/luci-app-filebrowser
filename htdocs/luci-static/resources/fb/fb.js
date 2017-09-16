@@ -1,6 +1,6 @@
 String.prototype.replaceAll = function(search, replacement) {
-    var target = this;
-    return target.replace(new RegExp(search, 'g'), replacement);
+  var target = this;
+  return target.replace(new RegExp(search, 'g'), replacement);
 };
 (function () {
   var iwxhr = new XHR();
@@ -9,9 +9,7 @@ String.prototype.replaceAll = function(search, replacement) {
   var currentPath;
   var pathElem = document.getElementById("current-path");
   pathElem.onblur = function () {
-    var path = this.value.trim();
-    if (currentPath !== path)
-    update_list(path);
+    update_list(this.value.trim());
   };
   pathElem.onkeyup = function (evt) {
     if (evt.keyCode == 13) {
@@ -19,36 +17,36 @@ String.prototype.replaceAll = function(search, replacement) {
     }
   };
   function removePath(filename, isdir) {
-      var c = confirm('确认删除 ' + filename + ' ?');
-      if (c) {
-          iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_delete',
-            {
-                path: concatPath(currentPath, filename),
-                isdir: isdir
-            },
-            function (x, res) {
-              if (res.ec === 0) {
-                refresh_list(res.data, currentPath);
-              }
-          });
-      }
+    var c = confirm('确认删除 ' + filename + ' ?');
+    if (c) {
+      iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_delete',
+        {
+          path: concatPath(currentPath, filename),
+          isdir: isdir
+        },
+        function (x, res) {
+          if (res.ec === 0) {
+            refresh_list(res.data, currentPath);
+          }
+      });
+    }
   }
   function renamePath(filename) {
-      var newname = prompt('输入新名字:', filename).trim();
-      if (newname && newname != filename) {
-          var newpath = concatPath(currentPath, newname);
-          iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_rename',
-            {
-                filepath: concatPath(currentPath, filename),
-                newpath: newpath
-            },
-            function (x, res) {
-              if (res.ec === 0) {
-                refresh_list(res.data, currentPath);
-              }
-            }
-          );
-      }
+    var newname = prompt('输入新名字:', filename).trim();
+    if (newname && newname != filename) {
+      var newpath = concatPath(currentPath, newname);
+      iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_rename',
+        {
+          filepath: concatPath(currentPath, filename),
+          newpath: newpath
+        },
+        function (x, res) {
+          if (res.ec === 0) {
+            refresh_list(res.data, currentPath);
+          }
+        }
+      );
+    }
   }
 
   function openpath(filename, dirname) {
@@ -150,35 +148,40 @@ String.prototype.replaceAll = function(search, replacement) {
     listHtml += "</table>";
     listElem.innerHTML = listHtml;
   }
-  function update_list(path) {
+  function update_list(path, opt) {
+    opt = opt || {};
     path = concatPath(path, '');
-    iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_list',
-      {path: path},
-      function (x, res) {
-        if (res.ec === 0) {
-          refresh_list(res.data, path);
+    if (currentPath != path) {
+      iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_list',
+        {path: path},
+        function (x, res) {
+          if (res.ec === 0) {
+            refresh_list(res.data, path);
+          }
+          else {
+            refresh_list([], path);
+          }
         }
-        else {
-          refresh_list([], path);
-        }
-        currentPath = path;
+      );
+      if (currentPath !== undefined && !opt.popState) { // first load
+        history.pushState({path: path}, null, '?path=' + path);
       }
-    );
-    history.pushState(null, null, '?path=' + path);
-    pathElem.value = path;
+      currentPath = path;
+      pathElem.value = currentPath;
+    }
   };
 
   var uploadToggle = document.getElementById('upload-toggle');
   var uploadContainer = document.getElementById('upload-container');
   var isUploadHide = true;
   uploadToggle.onclick = function() {
-      if (isUploadHide) {
-          uploadContainer.style.display = 'inline-flex';
-      }
-      else {
-          uploadContainer.style.display = 'none';
-      }
-      isUploadHide = !isUploadHide;
+    if (isUploadHide) {
+      uploadContainer.style.display = 'inline-flex';
+    }
+    else {
+      uploadContainer.style.display = 'none';
+    }
+    isUploadHide = !isUploadHide;
   };
   var uploadBtn = uploadContainer.getElementsByClassName('cbi-input-apply')[0];
   uploadBtn.onclick = function (evt) {
@@ -211,9 +214,15 @@ String.prototype.replaceAll = function(search, replacement) {
 
   document.addEventListener('DOMContentLoaded', function(evt) {
     var initPath = '/';
-      if (/path=([/\w]+)/.test(location.search)) {
-        initPath = RegExp.$1;
+    if (/path=([/\w]+)/.test(location.search)) {
+      initPath = RegExp.$1;
     }
     update_list(initPath);
   });
+  window.addEventListener('popstate', function (evt) {
+    if (evt.state && evt.state.path) {
+      update_list(evt.state.path, {popState: true});
+    }
+  });
+
 })();
