@@ -163,7 +163,7 @@ String.prototype.replaceAll = function(search, replacement) {
           }
         }
       );
-      if (currentPath !== undefined && !opt.popState) { // first load
+      if (!opt.popState) {
         history.pushState({path: path}, null, '?path=' + path);
       }
       currentPath = path;
@@ -217,12 +217,14 @@ String.prototype.replaceAll = function(search, replacement) {
     if (/path=([/\w]+)/.test(location.search)) {
       initPath = RegExp.$1;
     }
-    update_list(initPath);
+    update_list(initPath, {popState: true});
   });
   window.addEventListener('popstate', function (evt) {
+    var path = '/';
     if (evt.state && evt.state.path) {
-      update_list(evt.state.path, {popState: true});
+      path = evt.state.path;
     }
+    update_list(path, {popState: true});
   });
 
 })();
