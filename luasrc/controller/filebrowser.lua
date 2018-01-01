@@ -142,6 +142,7 @@ MIME_TYPES = {
     ["txt"]   = "text/plain";
     ["conf"]   = "text/plain";
     ["ovpn"]   = "text/plain";
+    ["log"]   = "text/plain";
     ["js"]    = "text/javascript";
     ["json"]    = "application/json";
     ["css"]   = "text/css";
