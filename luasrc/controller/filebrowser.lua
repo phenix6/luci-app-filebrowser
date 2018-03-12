@@ -45,15 +45,17 @@ function filebrowser_list()
     list_response(path, true)
 end
 
-function filebrowser_open(file, filename)
-    file = file:gsub("<>", "/")
-
+function filebrowser_open()
+    local path = luci.http.formvalue("path")
+    local filename = luci.http.formvalue("filename")
     local io = require "io"
     local mime = to_mime(filename)
 
+    file = path..filename
+
     local download_fpi = io.open(file, "r")
     luci.http.header('Content-Disposition', 'inline; filename="'..filename..'"' )
-    luci.http.prepare_content(mime or "application/octet-stream")
+    luci.http.prepare_content(mime)
     luci.ltn12.pump.all(luci.ltn12.source.file(download_fpi), luci.http.write)
 end
 

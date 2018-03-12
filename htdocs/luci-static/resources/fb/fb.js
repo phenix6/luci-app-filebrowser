@@ -32,27 +32,31 @@ String.prototype.replaceAll = function(search, replacement) {
     }
   }
   function renamePath(filename) {
-    var newname = prompt('输入新名字:', filename).trim();
-    if (newname && newname != filename) {
-      var newpath = concatPath(currentPath, newname);
-      iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_rename',
-        {
-          filepath: concatPath(currentPath, filename),
-          newpath: newpath
-        },
-        function (x, res) {
-          if (res.ec === 0) {
-            refresh_list(res.data, currentPath);
+    var newname = prompt('输入新名字:', filename);
+    if (newname) {
+      newname = newname.trim();
+      if (newname != filename) {
+        var newpath = concatPath(currentPath, newname);
+        iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_rename',
+          {
+            filepath: concatPath(currentPath, filename),
+            newpath: newpath
+          },
+          function (x, res) {
+            if (res.ec === 0) {
+              refresh_list(res.data, currentPath);
+            }
           }
-        }
-      );
+        );
+      }
     }
   }
 
   function openpath(filename, dirname) {
     dirname = dirname || currentPath;
-    var encodePath = encodeURIComponent(concatPath(dirname, filename).replace(/\//g, '<>'));
-    window.open('/cgi-bin/luci/admin/system/filebrowser_open/' + encodePath + '/' + filename);
+    window.open('/cgi-bin/luci/admin/system/filebrowser_open?path='
+      + encodeURIComponent(dirname) + '&filename='
+      + encodeURIComponent(filename));
   }
 
   function getFileElem(elem) {
