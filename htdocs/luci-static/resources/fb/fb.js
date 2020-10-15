@@ -180,7 +180,7 @@ String.prototype.replaceAll = function(search, replacement) {
   var isUploadHide = true;
   uploadToggle.onclick = function() {
     if (isUploadHide) {
-      uploadContainer.style.display = 'inline-flex';
+      uploadContainer.style.display = 'flex';
     }
     else {
       uploadContainer.style.display = 'none';
