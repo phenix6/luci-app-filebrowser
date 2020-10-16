@@ -17,7 +17,7 @@ String.prototype.replaceAll = function(search, replacement) {
     }
   };
   function removePath(filename, isdir) {
-    var c = confirm('确认删除 ' + filename + ' ?');
+    var c = confirm(_('Want to delete: ') + filename + ' ?');
     if (c) {
       iwxhr.get('/cgi-bin/luci/admin/system/filebrowser_delete',
         {
@@ -32,7 +32,7 @@ String.prototype.replaceAll = function(search, replacement) {
     }
   }
   function renamePath(filename) {
-    var newname = prompt('输入新名字:', filename);
+    var newname = prompt(_('Enter New Name:'), filename);
     if (newname) {
       newname = newname.trim();
       if (newname != filename) {
@@ -143,8 +143,8 @@ String.prototype.replaceAll = function(search, replacement) {
             + '<td class="cbi-value-field cbi-value-date">'+o.date+'</td>'
             + '<td class="cbi-value-field cbi-value-size">'+o.size+'</td>'
             + '<td class="cbi-value-field cbi-value-perm">'+o.perms+'</td>'
-            + '<td class="cbi-section-table-cell"><button class="cbi-button cbi-button-edit">重命名</button>\
-                <button class="cbi-button cbi-button-remove">删除</button></td>'
+            + '<td class="cbi-section-table-cell"><button class="cbi-button cbi-button-edit">' + _('Rename')
+            + '</button><button class="cbi-button cbi-button-remove">' + _('Delete') + '</button></td>'
             + '</tr>';
         }
       }
@@ -209,7 +209,7 @@ String.prototype.replaceAll = function(search, replacement) {
           uploadinput.value = '';
         }
         else {
-          alert('上传失败');
+          alert(_('Upload failed'));
         }
       };
       xhr.send(formData);

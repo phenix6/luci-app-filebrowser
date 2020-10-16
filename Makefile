@@ -3,7 +3,7 @@
 
 include $(TOPDIR)/rules.mk
 
-LUCI_TITLE:=File browser app for OpenWrt Luci
+LUCI_TITLE:=File browser for OpenWrt
 LUCI_PKGARCH:=all
 
 include ../../luci.mk
